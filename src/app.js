@@ -1,12 +1,18 @@
 import { LitElement, html } from 'lit';
 import { Router } from '@lit-labs/router';
 import './products/products.js';
+import './login/login.js';
+
 
 class AppRouter extends LitElement {
   #router = new Router(this, [
     { 
       path: '/',
       render: () => html`<h1>Accueil</h1>`
+    },
+    { 
+      path: '/login',
+      render: () => html`<login-page></login-page>`
     },
     { 
       path: '/products',
@@ -23,6 +29,7 @@ class AppRouter extends LitElement {
     return html`
       <nav>
         <a href="/" @click=${this._navigate}>Accueil</a> |
+        <a href="/login" @click=${this._navigate}>Login</a> |
         <a href="/products" @click=${this._navigate}>Produits</a>
       </nav>
       ${this.#router.outlet()}
