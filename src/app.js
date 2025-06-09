@@ -4,6 +4,7 @@ import './pages/login.js';
 import './pages/employee.js';
 import './pages/manager.js';
 import './pages/products.js';
+import './pages/products-restock.js';
 import './pages/orders.js';
 import './pages/home.js';
 
@@ -46,6 +47,14 @@ class AppRouter extends LitElement {
           ),
       },
       {
+        path: '/products-restock',
+        render: () =>
+          this._requireRole(
+            ['employee'],
+            () => html`<products-restock-page></products-restock-page>`
+          ),
+      },
+      {
         path: '/orders',
         render: () =>
           this._requireRole(
@@ -81,6 +90,7 @@ class AppRouter extends LitElement {
                     >
                     |
                     <a href="/products" @click=${this._navigate}>Produits</a> |
+                    <a href="/products-restock" @click=${this._navigate}>Réapprovisionnement</a> |
                     <a href="/orders" @click=${this._navigate}>Commandes</a>
                   `
                 : this.userStatus === 'manager'

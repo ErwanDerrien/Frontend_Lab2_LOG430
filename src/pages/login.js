@@ -4,6 +4,8 @@ export class Login extends LitElement {
   static properties = {
     username: { type: String },
     password: { type: String },
+    storeId: { type: Number },
+    role: { type: String },
     isLoading: { type: Boolean },
     errorMessage: { type: String },
   };
@@ -12,17 +14,39 @@ export class Login extends LitElement {
     super();
     this.username = 'employee';
     this.password = 'test';
+    this.storeId = 1;
+    this.role = 'employee'; // 'employee' ou 'manager'
     this.isLoading = false;
     this.errorMessage = '';
   }
 
   handleInput(e) {
-    this[e.target.name] = e.target.value;
+    const { name, value } = e.target;
+
+    if (name === 'role') {
+      this.role = value;
+      // Quand on change de rôle, ajuste storeId
+      this.storeId = value === 'manager' ? 0 : 1;
+    } else if (name === 'storeId') {
+      // Se met à jour seulement si role = employee
+      if (this.role === 'employee') {
+        this.storeId = Number(value);
+      }
+    } else {
+      this[name] = value;
+    }
+
     this.requestUpdate();
   }
 
   async handleSubmit(e) {
     e.preventDefault();
+
+    if (this.role === 'employee' && (this.storeId < 1 || this.storeId > 5)) {
+      this.errorMessage = 'Veuillez sélectionner un magasin valide (1-5)';
+      return;
+    }
+
     this.isLoading = true;
     this.errorMessage = '';
     this.requestUpdate();
@@ -30,12 +54,11 @@ export class Login extends LitElement {
     try {
       const response = await fetch('http://localhost:8080/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           username: this.username,
           password: this.password,
+          store_id: this.storeId,
         }),
         credentials: 'include',
         mode: 'cors',
@@ -49,13 +72,15 @@ export class Login extends LitElement {
       console.log('Login successful:', data);
 
       if (data.status === 'employee' || data.status === 'manager') {
-        // Stocker le rôle dans localStorage
         localStorage.setItem('userStatus', data.status);
+        localStorage.setItem('storeId', this.storeId.toString());
 
-        // Déclencher l’événement pour AppRouter
         this.dispatchEvent(
           new CustomEvent('login-success', {
-            detail: { status: data.status },
+            detail: {
+              status: data.status,
+              storeId: Number(this.storeId),
+            },
             bubbles: true,
             composed: true,
           })
@@ -79,6 +104,29 @@ export class Login extends LitElement {
         <h2>Connexion</h2>
 
         <form @submit=${this.handleSubmit}>
+          <div class="form-group radio-group">
+            <label>
+              <input
+                type="radio"
+                name="role"
+                value="employee"
+                ?checked=${this.role === 'employee'}
+                @change=${this.handleInput}
+              />
+              Employé
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="role"
+                value="manager"
+                ?checked=${this.role === 'manager'}
+                @change=${this.handleInput}
+              />
+              Gestionnaire
+            </label>
+          </div>
+
           <div class="form-group">
             <label for="username">Nom d'utilisateur:</label>
             <input
@@ -105,6 +153,26 @@ export class Login extends LitElement {
             />
           </div>
 
+          ${this.role === 'employee'
+            ? html`
+                <div class="form-group">
+                  <label for="storeId">Magasin (1-5):</label>
+                  <select
+                    id="storeId"
+                    name="storeId"
+                    .value=${this.storeId}
+                    @change=${this.handleInput}
+                    required
+                    ?disabled=${this.isLoading}
+                  >
+                    ${[1, 2, 3, 4, 5].map(
+                      (num) =>
+                        html`<option value=${num}>Magasin ${num}</option>`
+                    )}
+                  </select>
+                </div>
+              `
+            : ''}
           ${this.errorMessage
             ? html`<div class="error">${this.errorMessage}</div>`
             : ''}
@@ -135,18 +203,32 @@ export class Login extends LitElement {
           margin-bottom: 1rem;
         }
 
-        label {
-          display: block;
-          margin-bottom: 0.5rem;
-          font-weight: 500;
+        .radio-group {
+          display: inline-flex;
+          gap: 2rem;
+          margin-bottom: 1rem;
+          align-items: center;
         }
 
-        input {
+        label {
+          font-weight: 500;
+          cursor: pointer;
+          user-select: none;
+        }
+
+        input[type='text'],
+        input[type='password'],
+        select {
           width: 100%;
           padding: 0.75rem;
           border: 1px solid #ddd;
           border-radius: 4px;
           font-size: 1rem;
+        }
+
+        input[type='radio'] {
+          margin-right: 0.5rem;
+          cursor: pointer;
         }
 
         button {

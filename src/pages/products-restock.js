@@ -1,6 +1,6 @@
 import { LitElement, html, css } from 'lit';
 
-export class ProductsPage extends LitElement {
+export class ProductsRestockPage extends LitElement {
   static styles = css`
     :host {
       display: block;
@@ -9,18 +9,11 @@ export class ProductsPage extends LitElement {
       margin: 0 auto;
     }
 
-    .search-container {
-      margin-bottom: 20px;
+    .header {
       display: flex;
-      gap: 10px;
-    }
-
-    input {
-      padding: 10px;
-      font-size: 16px;
-      flex-grow: 1;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
     }
 
     button {
@@ -39,7 +32,7 @@ export class ProductsPage extends LitElement {
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 20px;
+      margin-top: 10px;
     }
 
     th,
@@ -60,7 +53,6 @@ export class ProductsPage extends LitElement {
   `;
 
   static properties = {
-    searchTerm: { type: String },
     products: { type: Array },
     isLoading: { type: Boolean },
     error: { type: String },
@@ -68,7 +60,6 @@ export class ProductsPage extends LitElement {
 
   constructor() {
     super();
-    this.searchTerm = '';
     this.products = [];
     this.isLoading = false;
     this.error = '';
@@ -76,28 +67,20 @@ export class ProductsPage extends LitElement {
 
   connectedCallback() {
     super.connectedCallback();
-    this.loadAllProducts();
+    this.loadCentralProducts(); // charge produits avec store_id === 0
   }
 
   render() {
     return html`
-      <h1 style="color: blue">Recherche de Produits</h1>
-
-      <div class="search-container">
-        <input
-          type="text"
-          .value=${this.searchTerm}
-          @input=${(e) => (this.searchTerm = e.target.value)}
-          placeholder="Entrez un terme de recherche..."
-          ?disabled=${this.isLoading}
-          @keyup=${(e) => e.key === 'Enter' && this.handleSearch()}
-        />
-        <button @click=${this.handleSearch} ?disabled=${this.isLoading}>
-          ${this.isLoading ? 'Recherche...' : 'Rechercher'}
+      <div class="header">
+        <h1 style="color: blue">Produits du Stock Central</h1>
+        <button @click=${this.handleRestock} ?disabled=${this.isLoading}>
+          ${this.isLoading ? 'En cours...' : 'Réapprovisionner'}
         </button>
       </div>
 
       ${this.error ? html`<div class="error">${this.error}</div>` : ''}
+
       ${this.products.length > 0
         ? html`
             <table>
@@ -131,61 +114,12 @@ export class ProductsPage extends LitElement {
     `;
   }
 
-  async handleSearch() {
-    if (!this.searchTerm.trim()) {
-      await this.loadAllProducts();
-      return;
-    }
-
+  async loadCentralProducts() {
     this.isLoading = true;
     this.error = '';
 
     try {
-      const response = await fetch(
-        `http://localhost:8080/products/${encodeURIComponent(this.searchTerm)}`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          mode: 'cors',
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Erreur lors de la recherche');
-      }
-
-      const data = await response.json();
-
-      if (data.status === 'success') {
-        this.products = data.data || [];
-      } else {
-        throw new Error(data.message || 'Erreur inconnue');
-      }
-    } catch (err) {
-      this.error = err.message;
-      this.products = [];
-    } finally {
-      this.isLoading = false;
-    }
-  }
-
-  async loadAllProducts() {
-    this.isLoading = true;
-    this.error = '';
-
-    const storeId = localStorage.getItem('storeId');
-    const userStatus = localStorage.getItem('userStatus');
-
-    try {
-      const url =
-        userStatus === 'manager'
-          ? 'http://localhost:8080/products'
-          : `http://localhost:8080/products/${storeId}`;
-
-      const response = await fetch(url, {
+      const response = await fetch('http://localhost:8080/products/0', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -212,6 +146,34 @@ export class ProductsPage extends LitElement {
       this.isLoading = false;
     }
   }
+
+  async handleRestock() {
+    this.isLoading = true;
+    this.error = '';
+
+    const storeId = localStorage.getItem('storeId');
+
+    try {
+      const response = await fetch(`http://localhost:8080/products/store/${storeId}/restock`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        mode: 'cors',
+      });
+
+      if (!response.ok) {
+        throw new Error('Erreur lors du réapprovisionnement');
+      }
+
+      await this.loadCentralProducts();
+    } catch (err) {
+      this.error = err.message;
+    } finally {
+      this.isLoading = false;
+    }
+  }
 }
 
-customElements.define('products-page', ProductsPage);
+customElements.define('products-restock-page', ProductsRestockPage);
