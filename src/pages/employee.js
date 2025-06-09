@@ -1,6 +1,6 @@
 import { LitElement, html, css } from "lit";
 
-export class EmployeeDashboardPage extends LitElement {
+export class EmployeeDashboard extends LitElement {
   static styles = css`
     .dashboard {
       font-family: "Arial", sans-serif;
@@ -65,30 +65,16 @@ export class EmployeeDashboardPage extends LitElement {
         <div class="button-grid">
           <button
             class="primary"
-            @click=${() => this.navigateTo("/search-products-page")}
+            @click=${() => this.navigateTo("/products")}
           >
-            <i>🔍</i> Rechercher un produit / État des stocks
+            <i>🔍</i> Produits
           </button>
 
           <button
             class="secondary"
-            @click=${() => this._handleClick("Enregistrer une vente")}
+            @click=${() => this.navigateTo("/orders")}
           >
-            <i>🏖️</i> Enregistrer une commande
-          </button>
-
-          <button
-            class="warning"
-            @click=${() => this._handleClick("Annuler une commande")}
-          >
-            <i>📊</i> Annuler une commande
-          </button>
-
-          <button
-            class="info"
-            @click=${() => this._handleClick("État des commandes")}
-          >
-            <i>⚙️</i> État des commandes
+            <i>🏖️</i> Commandes
           </button>
         </div>
       </div>
@@ -125,4 +111,4 @@ export class EmployeeDashboardPage extends LitElement {
   }
 }
 
-customElements.define("employee-dashboard-page", EmployeeDashboardPage);
+customElements.define("employee-dashboard", EmployeeDashboard);

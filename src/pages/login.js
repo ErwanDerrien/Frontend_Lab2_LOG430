@@ -1,6 +1,6 @@
 import { LitElement, html } from "lit";
 
-export class LoginPage extends LitElement {
+export class Login extends LitElement {
   static properties = {
     username: { type: String },
     password: { type: String },
@@ -10,7 +10,7 @@ export class LoginPage extends LitElement {
 
   constructor() {
     super();
-    this.username = "manager";
+    this.username = "employee";
     this.password = "test";
     this.isLoading = false;
     this.errorMessage = "";
@@ -38,7 +38,7 @@ export class LoginPage extends LitElement {
           password: this.password,
         }),
         credentials: "include",
-        mode: "cors"
+        mode: "cors",
       });
 
       if (!response.ok) {
@@ -47,6 +47,16 @@ export class LoginPage extends LitElement {
 
       const data = await response.json();
       console.log("Login successful:", data);
+
+      if (data.status === "employee") {
+        this.dispatchEvent(
+          new CustomEvent("login-success", {
+            detail: { status: data.status },
+            bubbles: true,
+            composed: true,
+          })
+        );
+      }
     } catch (error) {
       this.errorMessage = error.message.includes("Failed to fetch")
         ? "Erreur de connexion au serveur"
@@ -160,4 +170,4 @@ export class LoginPage extends LitElement {
   }
 }
 
-customElements.define("login-page", LoginPage);
+customElements.define("login-page", Login);

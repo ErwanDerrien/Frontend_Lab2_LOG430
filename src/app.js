@@ -1,48 +1,70 @@
 import { LitElement, html } from 'lit';
 import { Router } from '@lit-labs/router';
-import './login/login.js';
-import './dashboards/employee.js';
-import './products/products.js'
-import './orders/orders.js'
-
+import './pages/login.js';
+import './pages/employee.js';
+import './pages/products.js';
+import './pages/orders.js';
+import './pages/home.js';
 
 class AppRouter extends LitElement {
-  #router = new Router(this, [
-    { 
-      path: '/',
-      render: () => html`<h1>Accueil</h1>`
-    },
-    { 
-      path: '/login',
-      render: () => html`<login-page></login-page>`
-    },
-    { 
-      path: '/employee-dashboard',
-      render: () => html`<employee-dashboard-page></employee-dashboard-page>`
-    },
-    { 
-      path: '/products-page',
-      render: () => html`<products-page></products-page>`
-    },
-    { 
-      path: '/orders',
-      render: () => html`<orders-page></orders-page>`
-    }
-  ]);
+  static properties = {
+    isLoggedIn: { type: Boolean },
+  };
+
+  #router;
 
   constructor() {
     super();
+    this.isLoggedIn = localStorage.getItem('userStatus') === 'employee';
+
+    this.#router = new Router(this, [
+      {
+        path: '/',
+        render: () => html`<home-page></home-page>`,
+      },
+      {
+        path: '/login',
+        render: () => html`
+          <login-page @login-success=${this._onLoginSuccess}></login-page>
+        `,
+      },
+      {
+        path: '/employee-dashboard',
+        render: () =>
+          this._requireAuth(
+            () => html`<employee-dashboard></employee-dashboard>`
+          ),
+      },
+      {
+        path: '/products',
+        render: () =>
+          this._requireAuth(() => html`<products-page></products-page>`),
+      },
+      {
+        path: '/orders',
+        render: () =>
+          this._requireAuth(() => html`<orders-page></orders-page>`),
+      },
+    ]);
+
     window.addEventListener('popstate', () => this.requestUpdate());
   }
 
   render() {
     return html`
       <nav>
-        <a href="/" @click=${this._navigate}>Accueil</a> |
-        <a href="/login" @click=${this._navigate}>Login</a> |
-        <a href="/employee-dashboard" @click=${this._navigate}>Employee Dashboard</a>
-        <a href="/products-page" @click=${this._navigate}>Products Page</a>
-        <a href="/orders" @click=${this._navigate}>Orders Page</a>
+        <a href="/" @click=${this._navigate}>Accueil</a>
+        ${!this.isLoggedIn
+          ? html`| <a href="/login" @click=${this._navigate}>Login</a>`
+          : html`
+              |
+              <a href="/employee-dashboard" @click=${this._navigate}
+                >Dashboard</a
+              >
+              | <a href="/products" @click=${this._navigate}>Produits</a> |
+              <a href="/orders" @click=${this._navigate}>Commandes</a> |
+              <button @click=${this._logout}>Se déconnecter</button>
+            `}
       </nav>
       ${this.#router.outlet()}
     `;
@@ -50,8 +72,33 @@ class AppRouter extends LitElement {
 
   _navigate(e) {
     e.preventDefault();
-    history.pushState({}, '', e.target.href);
-    this.#router.goto(e.target.pathname);
+    const path = new URL(e.target.href).pathname;
+    this.#router.goto(path);
+    history.pushState({}, '', path);
+    this.requestUpdate();
+  }
+
+  _requireAuth(renderFn) {
+    const isLoggedIn = localStorage.getItem('userStatus') === 'employee';
+    if (!isLoggedIn) {
+      this.#router.goto('/login');
+      return html``;
+    }
+    return renderFn();
+  }
+
+  _onLoginSuccess(e) {
+    const status = e.detail.status;
+    localStorage.setItem('userStatus', status);
+    this.isLoggedIn = true;
+    this.#router.goto('/employee-dashboard');
+    this.requestUpdate();
+  }
+
+  _logout() {
+    localStorage.removeItem('userStatus');
+    this.isLoggedIn = false;
+    this.#router.goto('/login');
     this.requestUpdate();
   }
 }
