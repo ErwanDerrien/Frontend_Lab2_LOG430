@@ -1,6 +1,6 @@
 import { LitElement, html, css } from "lit";
 
-export class SearchProductsPage extends LitElement {
+export class ProductsPage extends LitElement {
   static styles = css`
     :host {
       display: block;
@@ -204,4 +204,4 @@ export class SearchProductsPage extends LitElement {
   }
 }
 
-customElements.define("search-products-page", SearchProductsPage);
+customElements.define("products-page", ProductsPage);

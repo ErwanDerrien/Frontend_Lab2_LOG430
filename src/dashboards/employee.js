@@ -67,14 +67,14 @@ export class EmployeeDashboardPage extends LitElement {
             class="primary"
             @click=${() => this.navigateTo("/search-products-page")}
           >
-            <i>🔍</i> Rechercher un produit
+            <i>🔍</i> Rechercher un produit / État des stocks
           </button>
 
           <button
             class="secondary"
             @click=${() => this._handleClick("Enregistrer une vente")}
           >
-            <i>🏖️</i> Enregistrer une vente
+            <i>🏖️</i> Enregistrer une commande
           </button>
 
           <button
@@ -82,13 +82,6 @@ export class EmployeeDashboardPage extends LitElement {
             @click=${() => this._handleClick("Annuler une commande")}
           >
             <i>📊</i> Annuler une commande
-          </button>
-
-          <button
-            class="danger"
-            @click=${() => this._handleClick("État des stocks")}
-          >
-            <i>⚠️</i> État des stocks
           </button>
 
           <button

@@ -2,7 +2,8 @@ import { LitElement, html } from 'lit';
 import { Router } from '@lit-labs/router';
 import './login/login.js';
 import './dashboards/employee.js';
-import './products/search-products.js'
+import './products/products.js'
+import './orders/orders.js'
 
 
 class AppRouter extends LitElement {
@@ -20,8 +21,12 @@ class AppRouter extends LitElement {
       render: () => html`<employee-dashboard-page></employee-dashboard-page>`
     },
     { 
-      path: '/search-products-page',
-      render: () => html`<search-products-page></search-products-page>`
+      path: '/products-page',
+      render: () => html`<products-page></products-page>`
+    },
+    { 
+      path: '/orders',
+      render: () => html`<orders-page></orders-page>`
     }
   ]);
 
@@ -36,7 +41,8 @@ class AppRouter extends LitElement {
         <a href="/" @click=${this._navigate}>Accueil</a> |
         <a href="/login" @click=${this._navigate}>Login</a> |
         <a href="/employee-dashboard" @click=${this._navigate}>Employee Dashboard</a>
-        <a href="/search-products-page" @click=${this._navigate}>Search Products Page</a>
+        <a href="/products-page" @click=${this._navigate}>Products Page</a>
+        <a href="/orders" @click=${this._navigate}>Orders Page</a>
       </nav>
       ${this.#router.outlet()}
     `;
