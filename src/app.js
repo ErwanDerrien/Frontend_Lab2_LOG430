@@ -2,20 +2,21 @@ import { LitElement, html } from 'lit';
 import { Router } from '@lit-labs/router';
 import './pages/login.js';
 import './pages/employee.js';
+import './pages/manager.js';
 import './pages/products.js';
 import './pages/orders.js';
 import './pages/home.js';
 
 class AppRouter extends LitElement {
   static properties = {
-    isLoggedIn: { type: Boolean },
+    userStatus: { type: String },
   };
 
   #router;
 
   constructor() {
     super();
-    this.isLoggedIn = localStorage.getItem('userStatus') === 'employee';
+    this.userStatus = localStorage.getItem('userStatus') || null;
 
     this.#router = new Router(this, [
       {
@@ -31,19 +32,34 @@ class AppRouter extends LitElement {
       {
         path: '/employee-dashboard',
         render: () =>
-          this._requireAuth(
+          this._requireRole(
+            'employee',
             () => html`<employee-dashboard></employee-dashboard>`
           ),
       },
       {
         path: '/products',
         render: () =>
-          this._requireAuth(() => html`<products-page></products-page>`),
+          this._requireRole(
+            ['employee', 'manager'],
+            () => html`<products-page></products-page>`
+          ),
       },
       {
         path: '/orders',
         render: () =>
-          this._requireAuth(() => html`<orders-page></orders-page>`),
+          this._requireRole(
+            ['employee', 'manager'],
+            () => html`<orders-page></orders-page>`
+          ),
+      },
+      {
+        path: '/manager-dashboard',
+        render: () =>
+          this._requireRole(
+            'manager',
+            () => html`<manager-dashboard></manager-dashboard>`
+          ),
       },
     ]);
 
@@ -54,16 +70,31 @@ class AppRouter extends LitElement {
     return html`
       <nav>
         <a href="/" @click=${this._navigate}>Accueil</a>
-        ${!this.isLoggedIn
+        ${!this.userStatus
           ? html`| <a href="/login" @click=${this._navigate}>Login</a>`
           : html`
-              |
-              <a href="/employee-dashboard" @click=${this._navigate}
-                >Dashboard</a
-              >
-              | <a href="/products" @click=${this._navigate}>Produits</a> |
-              <a href="/orders" @click=${this._navigate}>Commandes</a> |
-              <button @click=${this._logout}>Se déconnecter</button>
+              ${this.userStatus === 'employee'
+                ? html`
+                    |
+                    <a href="/employee-dashboard" @click=${this._navigate}
+                      >Dashboard Employé</a
+                    >
+                    |
+                    <a href="/products" @click=${this._navigate}>Produits</a> |
+                    <a href="/orders" @click=${this._navigate}>Commandes</a>
+                  `
+                : this.userStatus === 'manager'
+                ? html`
+                    |
+                    <a href="/manager-dashboard" @click=${this._navigate}
+                      >Dashboard Gestionnaire</a
+                    >
+                    |
+                    <a href="/products" @click=${this._navigate}>Produits</a> |
+                    <a href="/orders" @click=${this._navigate}>Commandes</a>
+                  `
+                : ''}
+              | <button @click=${this._logout}>Se déconnecter</button>
             `}
       </nav>
       ${this.#router.outlet()}
@@ -78,27 +109,33 @@ class AppRouter extends LitElement {
     this.requestUpdate();
   }
 
-  _requireAuth(renderFn) {
-    const isLoggedIn = localStorage.getItem('userStatus') === 'employee';
-    if (!isLoggedIn) {
+  _requireRole(allowedRoles, renderFn) {
+    const currentStatus = localStorage.getItem('userStatus');
+    const roles = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
+
+    if (!roles.includes(currentStatus)) {
       this.#router.goto('/login');
       return html``;
     }
+
     return renderFn();
   }
 
   _onLoginSuccess(e) {
     const status = e.detail.status;
     localStorage.setItem('userStatus', status);
-    this.isLoggedIn = true;
-    this.#router.goto('/employee-dashboard');
+    this.userStatus = status;
+
+    const defaultPath =
+      status === 'manager' ? '/manager-dashboard' : '/employee-dashboard';
+    this.#router.goto(defaultPath);
     this.requestUpdate();
   }
 
   _logout() {
     localStorage.removeItem('userStatus');
-    this.isLoggedIn = false;
-    this.#router.goto('/login');
+    this.userStatus = null;
+    this.#router.goto('/');
     this.requestUpdate();
   }
 }

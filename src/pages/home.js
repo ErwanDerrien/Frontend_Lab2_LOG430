@@ -51,6 +51,8 @@ export class HomePage extends LitElement {
   constructor() {
     super();
     this.isLoggedIn = localStorage.getItem("userStatus") === "employee";
+    const userStatus = localStorage.getItem("userStatus")
+    this.isLoggedIn = userStatus === "employee" || userStatus === "manager";
   }
 
   render() {
@@ -63,8 +65,8 @@ export class HomePage extends LitElement {
       </p>
       ${!this.isLoggedIn
         ? html`
-            <a href="/login" class="login-button">Se connecter</a>
             <p>Veuillez vous connecter pour accéder aux fonctionnalités.</p>
+            <a href="/login" class="login-button">Se connecter</a>
           `
         : html``}
     `;

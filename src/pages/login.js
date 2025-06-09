@@ -1,4 +1,4 @@
-import { LitElement, html } from "lit";
+import { LitElement, html } from 'lit';
 
 export class Login extends LitElement {
   static properties = {
@@ -10,10 +10,10 @@ export class Login extends LitElement {
 
   constructor() {
     super();
-    this.username = "employee";
-    this.password = "test";
+    this.username = 'employee';
+    this.password = 'test';
     this.isLoading = false;
-    this.errorMessage = "";
+    this.errorMessage = '';
   }
 
   handleInput(e) {
@@ -24,42 +24,48 @@ export class Login extends LitElement {
   async handleSubmit(e) {
     e.preventDefault();
     this.isLoading = true;
-    this.errorMessage = "";
+    this.errorMessage = '';
     this.requestUpdate();
 
     try {
-      const response = await fetch("http://localhost:8080/login", {
-        method: "POST",
+      const response = await fetch('http://localhost:8080/login', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           username: this.username,
           password: this.password,
         }),
-        credentials: "include",
-        mode: "cors",
+        credentials: 'include',
+        mode: 'cors',
       });
 
       if (!response.ok) {
-        throw new Error((await response.text()) || "Échec de la connexion");
+        throw new Error((await response.text()) || 'Échec de la connexion');
       }
 
       const data = await response.json();
-      console.log("Login successful:", data);
+      console.log('Login successful:', data);
 
-      if (data.status === "employee") {
+      if (data.status === 'employee' || data.status === 'manager') {
+        // Stocker le rôle dans localStorage
+        localStorage.setItem('userStatus', data.status);
+
+        // Déclencher l’événement pour AppRouter
         this.dispatchEvent(
-          new CustomEvent("login-success", {
+          new CustomEvent('login-success', {
             detail: { status: data.status },
             bubbles: true,
             composed: true,
           })
         );
+      } else {
+        throw new Error('Rôle utilisateur non reconnu.');
       }
     } catch (error) {
-      this.errorMessage = error.message.includes("Failed to fetch")
-        ? "Erreur de connexion au serveur"
+      this.errorMessage = error.message.includes('Failed to fetch')
+        ? 'Erreur de connexion au serveur'
         : error.message;
     } finally {
       this.isLoading = false;
@@ -101,10 +107,10 @@ export class Login extends LitElement {
 
           ${this.errorMessage
             ? html`<div class="error">${this.errorMessage}</div>`
-            : ""}
+            : ''}
 
           <button type="submit" ?disabled=${this.isLoading}>
-            ${this.isLoading ? "Connexion en cours..." : "Se connecter"}
+            ${this.isLoading ? 'Connexion en cours...' : 'Se connecter'}
           </button>
         </form>
       </div>
@@ -170,4 +176,4 @@ export class Login extends LitElement {
   }
 }
 
-customElements.define("login-page", Login);
+customElements.define('login-page', Login);
